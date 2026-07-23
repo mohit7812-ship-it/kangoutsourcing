@@ -1,4 +1,4 @@
-# ---- Stage 1: Build frontend assets (Vite + Tailwind) ---
+# ---- Stage 1: Build frontend assets (Vite + Tailwind) ----
 FROM node:20-alpine AS node-build
 WORKDIR /app
 COPY package.json package-lock.json* ./
@@ -30,13 +30,14 @@ COPY . .
 # Bring in built frontend assets from stage 1
 COPY --from=node-build /app/public/build ./public/build
 
-# Finish composer setup
-RUN composer dump-autoload --optimize
-
-# Ensure SQLite db file + writable dirs exist
+# Ensure SQLite db file + writable dirs exist (must happen BEFORE composer
+# dump-autoload, since Laravel's package:discover script needs bootstrap/cache)
 RUN mkdir -p database && touch database/database.sqlite \
     && mkdir -p storage/framework/{cache,sessions,views} storage/logs bootstrap/cache \
     && chmod -R 775 storage bootstrap/cache database
+
+# Finish composer setup
+RUN composer dump-autoload --optimize
 
 # Cache Laravel config/routes/views for production
 RUN php artisan config:clear
