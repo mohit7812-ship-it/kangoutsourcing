@@ -30,13 +30,14 @@ COPY . .
 # Bring in built frontend assets from stage 1
 COPY --from=node-build /app/public/build ./public/build
 
-# Finish composer setup
-RUN composer dump-autoload --optimize
-
-# Ensure SQLite db file + writable dirs exist
+# Ensure SQLite db file + writable dirs exist (must happen BEFORE composer
+# dump-autoload, since Laravel's package:discover script needs bootstrap/cache)
 RUN mkdir -p database && touch database/database.sqlite \
     && mkdir -p storage/framework/{cache,sessions,views} storage/logs bootstrap/cache \
     && chmod -R 775 storage bootstrap/cache database
+
+# Finish composer setup
+RUN composer dump-autoload --optimize
 
 # Cache Laravel config/routes/views for production
 RUN php artisan config:clear
@@ -44,7 +45,12 @@ RUN php artisan config:clear
 EXPOSE 10000
 
 # Render sets $PORT; default to 10000 for local testing
-CMD php artisan migrate --force && \
+# Recreate storage/cache dirs at container start too (belt-and-suspenders,
+# in case the runtime environment resets permissions/paths from the build).
+CMD mkdir -p storage/framework/cache storage/framework/sessions storage/framework/views storage/logs bootstrap/cache database && \
+    touch database/database.sqlite && \
+    chmod -R 775 storage bootstrap/cache database && \
+    php artisan migrate --force && \
     php artisan config:cache && \
     php artisan route:cache && \
     php artisan view:cache && \
