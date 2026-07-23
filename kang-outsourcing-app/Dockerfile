@@ -1,4 +1,4 @@
-# ---- Stage 1: Build frontend assets (Vite + Tailwind) ----
+# ---- Stage 1: Build frontend assets (Vite + Tailwind) ---
 FROM node:20-alpine AS node-build
 WORKDIR /app
 COPY package.json package-lock.json* ./
