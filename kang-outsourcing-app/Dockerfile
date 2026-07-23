@@ -7,7 +7,7 @@ COPY . .
 RUN npm run build
 
 # ---- Stage 2: PHP application ----
-FROM php:8.3-cli AS app
+FROM php:8.4-cli AS app
 
 # System deps + PHP extensions Laravel needs
 RUN apt-get update && apt-get install -y \
